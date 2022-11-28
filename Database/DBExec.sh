@@ -51,7 +51,7 @@ then
 	else 
 		if [ $pass == "$passU" ] 
 		then
-			echo -e "User $(whoami) logged at $(date) and do \n -CHANGES- \n Logged into $usr"  >> ../Logs/SESSION_$(date +'%d_%m_%Y').txt || 2> /dev/null
+			echo -e "User $usr logged at $(date) and do \n -CHANGES- \n Logged into $usr"  >> ../Logs/SESSION_$(date +'%d_%m_%Y').txt || 2> /dev/null
 			echo -e "\e[1;32mWelcome, $usr!"
 			echo ty=$type >> ../Trash/.trashdb.txt
 			echo usr=$usr >> ../Trash/.trashdb.txt
@@ -62,12 +62,9 @@ then
 	fi 2> /dev/null
 	
 else 
-	echo $request > req.txt
 	value=$(mysql --user=root --password=srblack --ssl=false -h localhost SODB -e "$request")
 	value="${value#"${value%%[![:space:]]*}"}"
-	echo $value >> req.txt
 	echo $value
 	
 fi
-
 

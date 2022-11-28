@@ -1,4 +1,13 @@
 #!/bin/bash 
+
+for i in $*
+do
+	if [ $i == "--help" ] 
+	then
+		cat hel.txt
+		exit
+	fi
+done
 option=10
 bash ../Database/DBExec.sh login
 
@@ -153,6 +162,9 @@ function showMenu() { # Show the menu with the design
 	showSpecial "Logged as $usr"
 
 }
+function writeLog() {
+	echo $1 >> ../Logs/SESSION_$(date +'%d_%m_%y').txt
+}
 
 function dateCalc() {
 	fD=$(date +"%y/%m/%d" --date="+$1 day") 2> /dev/null # Calculate the date in a number of days
@@ -178,6 +190,7 @@ function addAbsence() { # This is to add an absence with a submenu
 		if [ -z $(DBExec "select ci as '' from teacher where ci='$ciAdd';") ]
 		then
 			echo "Inexistent teacher"
+			waitKey
 		else
 		
 
@@ -194,6 +207,8 @@ function addAbsence() { # This is to add an absence with a submenu
 		if [ $? != 0 ] 
 		then
 			echo "Format incorrect for the date. Try again"
+			waitKey
+			echo "4am and I am doing this stupids things because you are silly :("
 		else
 			showSpecial "It's more of a day? (S/N): "
 			read day
@@ -205,7 +220,7 @@ function addAbsence() { # This is to add an absence with a submenu
 			else
 				if [ $day == "S" ] || [ $day == "s" ]
 				then
-					showSpecial "Type quanty of days: "
+					showSpecial "Type quanty of days"
 					read qDays
 					
 					if [ -z $qDays ]
@@ -214,11 +229,13 @@ function addAbsence() { # This is to add an absence with a submenu
 						waitKey
 					else
 						dateCalc $qDays
+						writeLog "Add an absence to the user $ciAdd"
+						writeLog "Date: $dateAdd  - $fD"
 						DBExec "INSERT INTO absences(init, final, ci) VALUES ('$dateAdd 00:00:00', '$fD 00:00:00', '$ciAdd');" > /dev/null
 					fi
 					
 				else
-					echo "Init hour of the absence (24H Format ex: 13:50): "
+					showSpecial "Init hour of the absence (24H Format ex: 13:50)"
 					read init			
 					
 					if [ ! $#init -ne 5 ] || [ ! $init =~ ":" ] || [ $(echo $init | cut -d ":" -f1) -ge 24 ] && [ $(echo $init | cut -d":" -f1) -le 00 ] || [ $(echo $init | cut -d":" -f2) -ge 60 ] && [ $(echo $init | cut -d":" -f2) -le -01 ] # Check hours
@@ -239,12 +256,14 @@ function addAbsence() { # This is to add an absence with a submenu
 						waitKey
 						
 						else 
-						echo "Please type the CI of the teacher: "
+						showSpecial "CI of the teacher"
 						read ciTeach
 						checkCI $ciTeach
 						
 						if [ $valid -eq 0 ] || [ ! -z $(DBEXec "select na from teacher where ci="$ciTeach"") ]
 						then
+							writeLog "Add an absence for the user $ciTeach"
+							writeLog "Date: $(date +'%d %m %Y')  -  $init'"
 							DBExec "INSERT INTO absences(init, final) VALUES ('$(date +"%d %m %Y") $init:00'"> /dev/null
 						else
 							echo "Incorrect CI or teacher not found."
@@ -273,6 +292,8 @@ function addAbsence() { # This is to add an absence with a submenu
 			if [ $valid -eq 0 ] && [ ! -z $dateDel]
 			then
 				DBExec "delete from absences where init=$dateDel"
+				writeLog "Delete an absence for the user $ciDel"
+				writeLog "Date: $dateDel"
 			else
 				echo "I am tired :(. I always need to handle exceptions. You are unbereable"
 				waitKey
@@ -316,6 +337,15 @@ function checkDate() {
 function Exit() {
 	echo "Thanks for use my program!"
 }
+function showAbsence() {
+	clear
+	for i in $(DBExec "select teacher.na as '' from absences join teacher where absences.ci=teacher.ci;")
+	do
+		echo "$i have a total of $(DBExec "select count(absences.ci) as '' from absences join teacher where teacher.na='$i';") absences" 
+	done
+	writeLog "Ask about absences"
+
+}
 
 while [ $option != 0 ]
 do
@@ -329,8 +359,8 @@ do
 	;;
 	
 	2)
-	abs=$(DBExec "select * from absences;")
-	echo $abs
+		showAbsence
+		waitKey
 	;;
 	
 	1)

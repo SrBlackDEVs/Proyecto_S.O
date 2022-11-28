@@ -2,7 +2,7 @@
 
 service=$(systemctl is-active mysql)	
 
-request=$1
+request="$1"
 
 	# Active MySQL service
 	if [[ $service == 'inactive' ]];
@@ -62,8 +62,10 @@ then
 	fi 2> /dev/null
 	
 else 
+	echo $request > req.txt
 	value=$(mysql --user=root --password=srblack --ssl=false -h localhost SODB -e "$request")
 	value="${value#"${value%%[![:space:]]*}"}"
+	echo $value >> req.txt
 	echo $value
 	
 fi

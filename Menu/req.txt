@@ -1,0 +1,2 @@
+select admin.sh checkCI.py req.txt testing.sh test.sh from absences;
+init final ci 2022-05-23 00:00:00 2022-12-03 00:00:00 56064210

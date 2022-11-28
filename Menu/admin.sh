@@ -17,16 +17,17 @@ function ErrorMessage () {
 	echo -e "\e[0;31m+----------------------------------------------------------"
 }
 
-
 function waitKey() { # This is wait until a key will be pressed
 	echo "Press enter to continue..."
 	read IAmAUselessVariableLol > /dev/null 2> /dev/null
 }
 
 function showSpecial() {
+		echo ""
+		echo ""
 
 		echo -e "\e[0;34m┌──(\e[1;37m$1\e[0;34m)-[\e[0;31mWarning, you are \e[1;31m$type\e[0;34m]"
-		echo -e -n "└─\e[1;31m#\e[1;37 "
+		echo -e -n "└─\e[1;31m#\e[1;37m "
 }
 function user() {
 	if [ $type != "Director" ]
@@ -35,7 +36,7 @@ function user() {
 		waitKey
 	else
 		echo -e "                                                \e[0;35m+-----------------------------------------------------+"
-		echo -e "                                                \e[0;35m|\e[1;34m              1: Add user        	               \e[0;35m|"
+		echo -e "                                                \e[0;35m|\e[1;34m              1: Add user                         \e[0;35m|"
 		echo -e "                                                \e[0;35m|\e[1;34m              2: Delete an user                   \e[0;35m|"
 		echo -e "                                                \e[0;35m+-----------------------------------------------------+"
 		echo ""
@@ -55,6 +56,9 @@ function user() {
 			
 			showSpecial  "Complete name of the user "
 			read naUsr
+
+			showSpecial "Password for the user"
+			read -s password 
 			
 			if [ -z "$naUsr" ]
 			then
@@ -67,14 +71,14 @@ function user() {
 					echo "Incorrect CI."
 					waitKey
 				else
-				
-					showSpecial "Type of the new user"
+					echo ""
 					echo -e "                                                \e[0;35m+-----------------------------------------------------+"  
-					echo -e "                                                \e[0;35m|\e[1;34m              1: Administrative  	               \e[0;35m|"
-					echo -e "                                                \e[0;35m|\e[1;34m              2: Coordinator                     \e[0;35m|"
-					echo -e "                                                \e[0;35m|\e[1;34m              3: Student advisor                 \e[0;35m|"
+					echo -e "                                                \e[0;35m|\e[1;34m              1: Administrative 	               \e[0;35m|"
+					echo -e "                                                \e[0;35m|\e[1;34m              2: Coordinator                         \e[0;35m|"
+					echo -e "                                                \e[0;35m|\e[1;34m              3: Student advisor                     \e[0;35m|"
 					echo -e "                                                \e[0;35m+-----------------------------------------------------+"
-						
+					
+					showSpecial "Type of the new user"	
 					read subsubop
 					if [  $subsubop == "1" ]
 					then
@@ -95,30 +99,30 @@ function user() {
 						echo "Incorrect option."
 						waitKey
 					else
-						DBExec "INSERT INTO login (ci, na, typeUsr) VALUES ('$ciUsr', '$naUsr', '$newType')"
+						DBExec "INSERT INTO login (ci, na, typeUsr, pass) VALUES ('$ciUsr', '$naUsr', '$newType', '$password');"
 					fi 
 				fi
 			fi
 		;;
 		2)
-			showSpecial "Type CI of the user to delete: "
+			showSpecial "Type CI of the user to delete"
 			read ci
 			
 			checkCI $ci
 			
 			if [ $valid -eq 0 ]
 			then
-				if [ ! -z $(DBExec "select ci from login where ci=$ci") ]
+				if [ ! -z $(DBExec "select ci as '' from login where ci='$ci';") ]
 				then
-					DBExec "delete * from login where ci=$ci"
-					if [ -z $(DBEexec "select ci from login where ci=$ci") ]
+					DBExec "delete from login where ci='$ci';"
+					if [ -z $(DBExec "select ci as ''  from login where ci='$ci';") ]
 					then
 						echo "Deleted user with CI: $ci"
 					else
 					echo "Error deleting user"
 					fi
 				else 
-				echo "That user doesn-t exists"
+				echo "That user doesn't exists"
 				fi
 			else
 				echo "Incorret format to the CI"
@@ -130,6 +134,7 @@ function user() {
 }
 
 function showMenu() { # Show the menu with the design
+	clear
 	echo ""
 	echo ""
 	echo ""
@@ -161,16 +166,21 @@ function addAbsence() { # This is to add an absence with a submenu
 	echo -e "                                                \e[0;35m+-----------------------------------------------------+"
 	echo ""
 	echo ""
-	echo -e "\e[0;34m┌──(\e[1;37mLogged as $usr\e[0;34m)-[\e[0;31mWarning, you are \e[1;31m$type\e[0;34m]"
-	echo -e -n "└─\e[1;31m# "
+	showSpecial "Select an option"
 	read Subop
 	
 		case $Subop in
 		1)
-		showSpecial "CI of the teacher: "
+		showSpecial "CI of the teacher"
 		read ciAdd
 		checkCI $ciAdd
 		
+		if [ -z $(DBExec "select ci as '' from teacher where ci='$ciAdd';") ]
+		then
+			echo "Inexistent teacher"
+		else
+		
+
 		if [ $valid == 1 ]
 		then
 			echo "Incorrect format for the CI. Try again."
@@ -204,12 +214,7 @@ function addAbsence() { # This is to add an absence with a submenu
 						waitKey
 					else
 						dateCalc $qDays
-						if [ $? -eq 0] 
-						then
-						DBExec "INSERT INTO absences(init, final) VALUES ('$dateAdd 00:00:00', '$fD 00:00:00')" > /dev/null
-						else
-						echo "Really? Again? You are more stupid than I thought"
-						fi
+						DBExec "INSERT INTO absences(init, final, ci) VALUES ('$dateAdd 00:00:00', '$fD 00:00:00', '$ciAdd');" > /dev/null
 					fi
 					
 				else
@@ -252,6 +257,7 @@ function addAbsence() { # This is to add an absence with a submenu
 		fi
 		fi
 		fi
+		fi # Without tab because I am stupid.
 		;;
 			
 		2)
@@ -262,15 +268,15 @@ function addAbsence() { # This is to add an absence with a submenu
 			read dateDel
 			dateDel=$(checkDate $dateDel)
 
-			checkCI ciDel
+			checkCI $ciDel
 
 			if [ $valid -eq 0 ] && [ ! -z $dateDel]
 			then
-				DBExec "delete * from absences where init=$dateDel"
+				DBExec "delete from absences where init=$dateDel"
 			else
-				echo "I am tired :(. I always need to handle exceptions because I can't stand you"
+				echo "I am tired :(. I always need to handle exceptions. You are unbereable"
 				waitKey
-
+			fi
 
 
 		;;
@@ -283,7 +289,8 @@ function addAbsence() { # This is to add an absence with a submenu
 
 
 function DBExec() {
-	val=$(../Database/DBExec.sh $1)
+	val=$(../Database/DBExec.sh "$1")
+	echo $val
 }
 
 function checkCI() {
@@ -297,9 +304,9 @@ function checkCI() {
 	fi
 }
 function checkDate() {
-	day=$(echo $1 | cut -d "/" -f1)
+	day=$(echo $1 | cut -d "/" -f3)
 	month=$(echo $1 |cut -d "/" -f2)
-	year=$(echo $1 | cut -d "/" -f3)
+	year=$(echo $1 | cut -d "/" -f1)
 
 	date -d "$year-$month-$day" > /dev/null
 	echo "$year-$month-$day"
